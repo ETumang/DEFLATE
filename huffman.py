@@ -11,13 +11,16 @@ def make_tree(elements):
 
 	num_sym = float(sum(probs.values()))
 
+	#get each symbol probability
 	for key in probs:
 		probs[key] = float(probs[key])/num_sym
 
 	codewords = dict.fromkeys(probs.keys(),'')
 
+	#probably not the most efficient way to do this
 	syms_ord = sorted(list(probs.keys()))
 
+	#almost certainly not the most efficient way to do this
 	while len(probs) > 1:
 		key1 = syms_ord[-1]
 		key2 = syms_ord[-2]
@@ -27,8 +30,11 @@ def make_tree(elements):
 		probs[nsym] = probs.pop(key1)+probs.pop(key2)
 		syms_ord.append(nsym)
 
-	tree = syms_ord[0].split(' ')
-	
+	tree = list(set(syms_ord[0].split(' ')))
+
+	for i in range(0, len(tree)):
+		if not tree[i]: tree[i] = " "
+
 	while len(tree) > 1:
 		codewords[tree[0]] = codewords[tree[0]] + '1'
 		del tree[0]
@@ -39,51 +45,51 @@ def make_tree(elements):
 	codeword_string =""
 
 	for key in codewords:
-		codeword_string = codeword_string + key+":"+codewords[key]+"="
+		codeword_string = codeword_string + key+"~"+codewords[key]+"@"
 
 	return codeword_string[:-1]
 
 def encode(tree, string):
-	tree = list(tree.split('='))
+	tree = list(tree.split('@'))
 	codewords = {}
 	encoded = ""
 
 	for codepair in tree:
-		cp = codepair.split(':')
-		codewords[cp[0]] = cp[1]
+		cp = codepair.split('~')
+		if len(cp)==2:
+			codewords[cp[0]] = cp[1]
+		else:
+			codewords[''] = cp[0]
 
 	for char in string:
-		encoded = encoded + codewords[char.split(':')[0]]
+		encoded = encoded + codewords[char]
 
 	return encoded
 
 def decode(tree, string):
-	tree = list(tree.split('='))
+
+	tree = tree.split('@')
 	codewords = {}
-
-	for codepair in tree:
-		cp = codepair.split(':')
-		codewords[cp[0]] = cp[1]
-
-	m=[]
-
-	for i in range(0,len(string)-1):
-		print len(string)
-		if string[i] == '1':
-			codeword = string[:i]
-			string = string[i+1:]
-			m.append(codeword)
-
-
+	b = ""
 	plaintext = ""
 
-	for codeword in m:
-		plaintext = plaintext + codewords[codeword]
+	for codepair in tree:
+		cp = codepair.split('~')
+		if len(cp)==2:
+			codewords[cp[1]] = cp[0]
+		else:
+			codewords[''] = cp[0]
 
-	print plaintext
+	for i in range(0, len(string)):
+		b = b + string[i]
+		if b in codewords:
+			plaintext = plaintext + codewords[b]
+			b = ""
+
+	return plaintext
 
 if __name__=="__main__":
-	s = 'aaalsfkjasdlfisdjngfowerfngewoifjewlofnjeroignerligjwi'
+	s = 'Hello, my name is Blackbird. I like cake.cccccccccccccccccccccccccc'
 	t = make_tree(s)
-	decode(t,encode(t,s))
+	print decode(t,encode(t,s))
 	
